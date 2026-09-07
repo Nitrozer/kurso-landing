@@ -1,0 +1,5 @@
+node_modules
+dist
+lighthouse*
+.env
+.DS_Store
