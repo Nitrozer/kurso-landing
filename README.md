@@ -39,11 +39,18 @@ npm run dev
 supabase db push        # applique supabase/migrations/0001_waitlist.sql
 ```
 
+La migration est **deja appliquee** sur le projet `kurso`. La table est vide.
+
 La table `waitlist` est en RLS **insertion seule** : la clé anon du site peut
 déposer une adresse, jamais lire la liste. C'est voulu — la clé part dans le
 navigateur, elle est publique par conception.
 
 > **Ne jamais mettre la clé `service_role` dans ce projet.** Elle ignore RLS.
+
+Conséquence de ce choix : pas d'en-tête `resolution=ignore-duplicates` côté
+client. Il ferait générer un `ON CONFLICT`, qui exige de pouvoir relire la
+table — ce que `anon` n'a pas le droit de faire. Une adresse déjà inscrite
+ressort donc en `409`, traité comme un succès.
 
 ## Mise en ligne
 

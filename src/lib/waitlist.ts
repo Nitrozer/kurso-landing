@@ -13,7 +13,11 @@ export async function joinWaitlist(email: string, source: Source): Promise<void>
       apikey: ANON,
       Authorization: `Bearer ${ANON}`,
       'Content-Type': 'application/json',
-      Prefer: 'return=minimal,resolution=ignore-duplicates',
+      // Pas de `resolution=ignore-duplicates` : il ferait generer un
+      // ON CONFLICT, qui exige de pouvoir relire la table — or anon n'a
+      // deliberement aucun droit de lecture. Une adresse deja inscrite
+      // ressort donc en 409, traite comme un succes juste en dessous.
+      Prefer: 'return=minimal',
     },
     body: JSON.stringify({ email: email.trim().toLowerCase(), source }),
   })
