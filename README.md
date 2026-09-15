@@ -1,5 +1,7 @@
 # Kurso — site de présentation
 
+**Français** · [English](README.en.md)
+
 Page unique pour la bêta de [Kurso](https://github.com/Nitrozer/kurso-swift).
 React 19, TypeScript, Vite. La page est **pré-rendue au build** : le visiteur
 reçoit du HTML déjà peint, React ne sert qu'à faire vivre les deux formulaires.
@@ -52,12 +54,20 @@ client. Il ferait générer un `ON CONFLICT`, qui exige de pouvoir relire la
 table — ce que `anon` n'a pas le droit de faire. Une adresse déjà inscrite
 ressort donc en `409`, traité comme un succès.
 
-## Mise en ligne
+## Ce que le build produit
 
-`npm run build` produit `dist/`, servable tel quel (Vercel, Netlify, Pages).
+`npm run build` écrit `dist/`, servable tel quel (Vercel, Netlify, Pages) :
+
+```
+dist/index.html                  la page d'accueil, pré-rendue
+dist/confidentialite/index.html  la page RGPD, sans une ligne de JavaScript
+```
+
 Aucun serveur n'est nécessaire.
 
 ## Reste à faire
 
-- Page `/confidentialite` — obligatoire dès lors qu'on collecte des adresses.
+- La page `/confidentialite` existe, mais il lui manque deux mentions :
+  l'identité du **responsable du traitement**, et le lieu d'hébergement de la
+  base — le projet Supabase est en région **West EU (Paris)**.
 - L'envoi du message de sortie : Supabase stocke, il n'envoie pas.
