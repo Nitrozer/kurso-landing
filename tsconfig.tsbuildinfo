@@ -1,1 +1,1 @@
-{"root":["./src/app.tsx","./src/entry-server.tsx","./src/main.tsx","./src/components/waitlistform.tsx","./src/lib/waitlist.ts"],"version":"5.9.3"}
+{"root":["./src/app.tsx","./src/privacy.tsx","./src/entry-server.tsx","./src/main.tsx","./src/components/waitlistform.tsx","./src/lib/waitlist.ts"],"version":"5.9.3"}
