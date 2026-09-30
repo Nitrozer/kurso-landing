@@ -42,7 +42,7 @@ export default function WaitlistForm({ source, cta, note }: {
           onChange={e => setEmail(e.target.value)} />
 
         <button className={`btn${source === 'footer' ? ' btn-yellow' : ''}`}
-          type="submit" disabled={state === 'sending'}>
+          type="submit" data-magnet disabled={state === 'sending'}>
           {state === 'sending' ? 'UN INSTANT…' : cta}
         </button>
       </form>

@@ -1,7 +1,9 @@
 import WaitlistForm from './components/WaitlistForm'
-import Film from './components/Film'
-import { Arrow, Img, Marker, Scribble } from './components/Marks'
-import { useChapter, useMotion, useParallax, useReveal } from './lib/motion'
+import FilmScrub from './components/FilmScrub'
+import { Arrow, Img, Marker, Scribble, Words } from './components/Marks'
+import {
+  useChapter, useCursor, useCurtain, useMagnets, useMotion, useReveal, useStage,
+} from './lib/motion'
 
 const PROMISES = [
   { title: 'Tes cours restent chez toi', desc: "Ils vivent dans ton iCloud. Aucune de tes notes n'est hébergée sur nos serveurs.", bg: '#17B26A' },
@@ -26,14 +28,31 @@ const LIGUE = [
   { r: 4, n: 'Maxime D.', xp: '1 240' },
 ]
 
+const ms = (n: number) => ({ '--d': `${n}ms` } as React.CSSProperties)
+
 export default function App() {
   useMotion()
   useReveal()
-  useParallax()
+  useStage()
+  useCursor()
+  useMagnets()
+  const curtain = useCurtain()
   const chapter = useChapter()
 
   return (
     <>
+      {/* Le rideau : il n'existe que si le script tourne, et la page est
+          deja peinte dessous. */}
+      {curtain && (
+        <div className="curtain-sheet" aria-hidden="true">
+          <span className="curtain-mark">K</span>
+        </div>
+      )}
+
+      {/* Le grain : deux pour cent de bruit, pour que les aplats ne soient
+          pas parfaitement lisses. */}
+      <div className="grain" aria-hidden="true" />
+
       <header className="bar">
         <a className="logo" href="#haut">
           <span className="logo-mark" aria-hidden="true">K</span>
@@ -50,29 +69,33 @@ export default function App() {
 
       <main>
         {/* ---- 00 · l'ouverture ------------------------------------ */}
-        <section className="act open" id="haut" data-bg="ink" data-n="00" data-name="LE CAHIER">
+        <section className="act open" id="haut" data-bg="ink" data-n="00" data-name="LE CAHIER" data-par>
           <div className="gut open-grid">
             <div className="open-copy">
               <p className="label" data-rise>PRISE DE NOTES · RÉVISION · IPAD ET MAC</p>
               <h1>
-                <span className="line" data-rise style={{ '--d': '40ms' } as React.CSSProperties}>Le cahier</span>
-                <span className="line" data-rise style={{ '--d': '120ms' } as React.CSSProperties}>qui te fait</span>
-                <span className="line" data-rise style={{ '--d': '200ms' } as React.CSSProperties}><Marker>réviser</Marker>.</span>
+                <span className="line"><Words text="Le cahier" /></span>
+                <span className="line"><Words text="qui te fait" d={160} /></span>
+                <span className="line">
+                  <span className="w" data-rise style={ms(340)}>
+                    <span><Marker>réviser</Marker>.</span>
+                  </span>
+                </span>
               </h1>
-              <p className="lede" data-rise style={{ '--d': '300ms' } as React.CSSProperties}>
+              <p className="lede" data-rise style={ms(460)}>
                 Tu écris tes cours au Pencil, comme sur du papier. Kurso s'occupe du reste :
                 chaque page est datée, rangée dans la bonne matière, et devient des cartes
                 de révision quand tu entoures un passage.
               </p>
-              <div data-rise style={{ '--d': '380ms' } as React.CSSProperties}>
+              <div data-rise style={ms(560)}>
                 <WaitlistForm source="hero" cta="ME PRÉVENIR"
                   note="Un seul message, le jour de la sortie. Rien d'autre." />
               </div>
             </div>
 
             {/* La boucle muette : sept secondes, la page qui s'écrit toute seule. */}
-            <div className="open-screen" data-rise style={{ '--d': '160ms' } as React.CSSProperties}>
-              <div className="screen" data-par>
+            <div className="open-screen" data-rise style={ms(260)}>
+              <div className="screen">
                 <video className="screen-video" src="/video/boucle.mp4" poster="/img/boucle-poster.jpg"
                   autoPlay muted loop playsInline preload="auto" width={960} height={540}
                   aria-label="Une page de cours qui s'écrit : une ligne manuscrite, puis une échéance qui devient une tâche." />
@@ -88,38 +111,24 @@ export default function App() {
           </a>
         </section>
 
-        {/* ---- 01 · le film ---------------------------------------- */}
-        <section className="act" data-bg="blue" data-n="01" data-name="LE FILM">
-          <div className="gut">
-            <div className="act-head" id="film">
-              <p className="label" data-rise>CHAPITRE 01</p>
-              <h2 data-rise style={{ '--d': '80ms' } as React.CSSProperties}>Une minute,<br />et tu as tout vu.</h2>
-              <p className="lede" data-rise style={{ '--d': '160ms' } as React.CSSProperties}>
-                Une rentrée, un semestre, un partiel. Le film montre l'app telle
-                qu'elle est — pas une promesse, des écrans.
-              </p>
-            </div>
-            <Film />
-          </div>
-        </section>
+        {/* ---- 01 · le film, déroulé au scroll --------------------- */}
+        <FilmScrub />
 
         {/* ---- 02 · écris ------------------------------------------ */}
         <section className="act" data-bg="blue" data-n="02" data-name="ÉCRIS">
           <div className="gut act-split">
             <div className="act-copy">
               <p className="label" data-rise>LE PREMIER GESTE</p>
-              <h2 data-rise style={{ '--d': '60ms' } as React.CSSProperties}>Écris.<br />Rien à classer.</h2>
-              <p className="lede" data-rise style={{ '--d': '140ms' } as React.CSSProperties}>
+              <h2><Words text="Écris." /><br /><Words text="Rien à classer." d={120} /></h2>
+              <p className="lede" data-rise style={ms(320)}>
                 Comme sur du papier. Ton emploi du temps range les pages pour toi :
                 la page ouverte à 8 h 15 le mardi est une page d'automatique, datée,
                 dans le bon cahier, sans que tu aies rien nommé.
               </p>
-              <p className="say" data-rise style={{ '--d': '220ms' } as React.CSSProperties}>
-                <b>4 cahiers, zéro dossier.</b>
-              </p>
+              <p className="say" data-rise style={ms(400)}><b>4 cahiers, zéro dossier.</b></p>
             </div>
-            <div className="act-art" data-rise style={{ '--d': '120ms' } as React.CSSProperties}>
-              <div className="frame tilt" data-par>
+            <div className="act-art" data-par data-rise style={ms(180)}>
+              <div className="frame tilt">
                 <Img name="shot-canevas" alt="Le canevas : une page manuscrite, presque aucune interface autour." w={560} h={420} />
               </div>
             </div>
@@ -131,18 +140,17 @@ export default function App() {
           <div className="gut act-split act-split-rev">
             <div className="act-copy">
               <p className="label" data-rise>LE DEUXIÈME GESTE</p>
-              <h2 data-rise style={{ '--d': '60ms' } as React.CSSProperties}>
-                <Scribble>Entoure</Scribble><br />un passage.
-              </h2>
-              <p className="lede" data-rise style={{ '--d': '140ms' } as React.CSSProperties}>
+              <h2><Scribble>Entoure</Scribble><br /><Words text="un passage." d={220} /></h2>
+              <p className="lede" data-rise style={ms(380)}>
                 Il devient une carte de révision — avec ton écriture, telle quelle.
                 Une échéance écrite à la main devient une tâche. Rien n'est généré :
                 Kurso lit ce que tu as écrit, et te le rend au bon moment.
               </p>
             </div>
-            <div className="act-art" data-rise style={{ '--d': '120ms' } as React.CSSProperties}>
-              {/* La pile de cartes du film, refaite en CSS : elle se retourne au survol. */}
-              <div className="deck" data-par>
+            <div className="act-art" data-par data-rise style={ms(180)}>
+              {/* La pile de cartes du film, refaite en CSS : elle s'ouvre en
+                  éventail à mesure qu'on descend. */}
+              <div className="deck">
                 <article className="deck-card deck-3" aria-hidden="true" />
                 <article className="deck-card deck-2" aria-hidden="true" />
                 <article className="deck-card deck-1">
@@ -160,20 +168,20 @@ export default function App() {
           <div className="gut act-split">
             <div className="act-copy">
               <p className="label" data-rise>LE TROISIÈME GESTE</p>
-              <h2 data-rise style={{ '--d': '60ms' } as React.CSSProperties}>Reviens.<br />Dix minutes.</h2>
-              <p className="lede" data-rise style={{ '--d': '140ms' } as React.CSSProperties}>
+              <h2><Words text="Reviens." /><br /><Words text="Dix minutes." d={120} /></h2>
+              <p className="lede" data-rise style={ms(320)}>
                 Le soir, pas trois heures. Tes pages redeviennent nettes, ton crayon
                 se retaille, ta série tient. Les cartes ratées reviennent sans punition,
                 et la série se gèle pendant les partiels.
               </p>
-              <ul className="gommes" data-rise style={{ '--d': '220ms' } as React.CSSProperties}>
+              <ul className="gommes" data-rise style={ms(420)}>
                 <li aria-hidden="true" /><li aria-hidden="true" /><li aria-hidden="true" />
                 <li aria-hidden="true" /><li aria-hidden="true" />
                 <li className="gommes-note">5 gommes · aucune perdue</li>
               </ul>
             </div>
-            <div className="act-art" data-rise style={{ '--d': '120ms' } as React.CSSProperties}>
-              <div className="frame tilt-rev" data-par>
+            <div className="act-art" data-par data-rise style={ms(180)}>
+              <div className="frame tilt-rev">
                 <Img name="shot-session" alt="Une session de révision : une carte, un combo, quelques gommes." w={560} h={420} />
               </div>
             </div>
@@ -185,17 +193,15 @@ export default function App() {
           <div className="gut act-split act-split-rev">
             <div className="act-copy">
               <p className="label" data-rise>LA JAUGE QU'ON NE PEUT PAS IGNORER</p>
-              <h2 data-rise style={{ '--d': '60ms' } as React.CSSProperties}>
-                Tes notes pâlissent<br />quand tu oublies.
-              </h2>
-              <p className="lede" data-rise style={{ '--d': '140ms' } as React.CSSProperties}>
+              <h2><Words text="Tes notes pâlissent" /><br /><Words text="quand tu oublies." d={200} /></h2>
+              <p className="lede" data-rise style={ms(400)}>
                 Pas de notification culpabilisante : l'encre de tes propres pages
                 s'éclaircit à l'écran à mesure que la mémoire se dégrade. Réviser les
                 rend nettes à nouveau. C'est une jauge d'oubli qu'on ne peut pas
                 ignorer, parce qu'elle est dans la page elle-même.
               </p>
             </div>
-            <div className="act-art" data-rise style={{ '--d': '120ms' } as React.CSSProperties}>
+            <div className="act-art" data-par data-rise style={ms(180)}>
               <div className="fade-card">
                 <p className="sr-only">
                   Illustration : trois lignes d'une même page, de la plus fraîche
@@ -217,27 +223,25 @@ export default function App() {
           <div className="gut">
             <div className="act-head">
               <p className="label" data-rise>ENTRE AMIS, PAS ENTRE INCONNUS</p>
-              <h2 data-rise style={{ '--d': '60ms' } as React.CSSProperties}>
-                Une ligue entre amis.<br />Personne ne descend.
-              </h2>
-              <p className="lede" data-rise style={{ '--d': '140ms' } as React.CSSProperties}>
+              <h2><Words text="Une ligue entre amis." /><br /><Words text="Personne ne descend." d={220} /></h2>
+              <p className="lede" data-rise style={ms(420)}>
                 On s'ajoute avec un code donné de vive voix : pas d'annuaire, pas de
                 recherche par prénom, personne ne peut te trouver. Douze places,
                 remises à zéro chaque semaine — les trois premiers montent, et
                 personne ne redescend.
               </p>
             </div>
-            <div className="social">
+            <div className="social" data-par>
               <article className="card code" data-rise>
                 <p className="label">TON CODE</p>
                 <p className="code-value">K7M-3QX</p>
                 <p className="code-note">Donne-le de vive voix. Personne ne peut te chercher par ton prénom.</p>
               </article>
-              <article className="card ligue" data-rise style={{ '--d': '100ms' } as React.CSSProperties}>
+              <article className="card ligue" data-rise style={ms(120)}>
                 <p className="label">LIGUE 2B · CETTE SEMAINE</p>
                 <ol>
-                  {LIGUE.map((l) => (
-                    <li key={l.r} className={l.moi ? 'moi' : undefined}>
+                  {LIGUE.map((l, i) => (
+                    <li key={l.r} className={l.moi ? 'moi' : undefined} data-rise style={ms(200 + i * 70)}>
                       <span className="ligue-r">{l.r}</span>
                       <span className="ligue-n">{l.n}</span>
                       {l.r <= 3 && <span className="ligue-up">MONTE</span>}
@@ -256,8 +260,7 @@ export default function App() {
             <h2 className="sr-only">Ce que Kurso te promet</h2>
             <div className="promises">
               {PROMISES.map((p, i) => (
-                <article className="promise" key={p.title} data-rise
-                  style={{ '--d': `${i * 70}ms` } as React.CSSProperties}>
+                <article className="promise" key={p.title} data-rise style={ms(i * 90)}>
                   <p className="chip-square" style={{ background: p.bg }} aria-hidden="true" />
                   <h3>{p.title}</h3>
                   <p>{p.desc}</p>
@@ -270,11 +273,10 @@ export default function App() {
         {/* ---- 08 · les questions ---------------------------------- */}
         <section className="act act-short" data-bg="paper" data-n="08" data-name="LES QUESTIONS">
           <div className="gut faq">
-            <h2 data-rise>Les questions<br />qu'on me pose</h2>
+            <h2><Words text="Les questions" /><br /><Words text="qu'on me pose" d={140} /></h2>
             <div className="faq-list">
               {FAQ.map((f, i) => (
-                <article className="faq-item" key={f.q} data-rise
-                  style={{ '--d': `${i * 40}ms` } as React.CSSProperties}>
+                <article className="faq-item" key={f.q} data-rise style={ms(i * 50)}>
                   <h3>{f.q}</h3>
                   <p>{f.a}</p>
                 </article>
@@ -289,19 +291,17 @@ export default function App() {
           <div className="gut cta-grid">
             <div>
               <p className="label" data-rise>TRENTE PLACES</p>
-              <h2 data-rise style={{ '--d': '60ms' } as React.CSSProperties}>
-                Bêta à la rentrée.<br />Places limitées.
-              </h2>
-              <p className="lede" data-rise style={{ '--d': '140ms' } as React.CSSProperties}>
+              <h2><Words text="Bêta à la rentrée." /><br /><Words text="Places limitées." d={180} /></h2>
+              <p className="lede" data-rise style={ms(380)}>
                 Je cherche une trentaine d'étudiants qui prennent leurs cours au Pencil
                 et qui accepteront de me dire ce qui ne va pas.
               </p>
-              <div data-rise style={{ '--d': '200ms' } as React.CSSProperties}>
+              <div data-rise style={ms(460)}>
                 <WaitlistForm source="footer" cta="REJOINDRE LA BÊTA"
                   note="Un seul message, le jour de la sortie. Rien d'autre." />
               </div>
             </div>
-            <div className="cta-art" data-rise style={{ '--d': '160ms' } as React.CSSProperties}>
+            <div className="cta-art" data-par data-rise style={ms(260)}>
               <Img name="gribou-applaudit" alt="Gribou applaudit" w={260} h={260} className="bob" />
             </div>
           </div>

@@ -11,6 +11,14 @@ const THEME: Record<string, string> = {
   green: '#17B26A', pink: '#FF8FA3', paper: '#F6F8FF',
 }
 
+const calm = () =>
+  typeof window !== 'undefined' &&
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+const fine = () =>
+  typeof window !== 'undefined' &&
+  window.matchMedia('(hover: hover) and (pointer: fine)').matches
+
 /**
  * Allume les animations, une fois le script en vie.
  *
@@ -22,23 +30,25 @@ const THEME: Record<string, string> = {
  */
 export function useMotion() {
   useEffect(() => {
-    const calm = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const pointer = window.matchMedia('(hover: hover) and (pointer: fine)')
     const apply = () => {
-      document.documentElement.classList.toggle('motion', !calm.matches)
+      const root = document.documentElement
+      root.classList.toggle('motion', !reduce.matches)
+      root.classList.toggle('fine', pointer.matches && !reduce.matches)
     }
     apply()
-    calm.addEventListener('change', apply)
-    return () => calm.removeEventListener('change', apply)
+    reduce.addEventListener('change', apply)
+    pointer.addEventListener('change', apply)
+    return () => {
+      reduce.removeEventListener('change', apply)
+      pointer.removeEventListener('change', apply)
+    }
   }, [])
 }
 
-/**
- * Revele les elements marques `data-rise` quand ils entrent dans le cadre.
- *
- * Un seul observateur pour toute la page, et chaque element est oublie une
- * fois montre : ce qui est apparu n'a plus de raison d'etre surveille.
- */
-export function useReveal(deps: unknown[] = []) {
+/** Revele les elements marques `data-rise` quand ils entrent dans le cadre. */
+export function useReveal() {
   useEffect(() => {
     const seen = new IntersectionObserver((entries) => {
       for (const entry of entries) {
@@ -46,21 +56,14 @@ export function useReveal(deps: unknown[] = []) {
         entry.target.classList.add('is-in')
         seen.unobserve(entry.target)
       }
-    }, { rootMargin: '0px 0px -10% 0px', threshold: 0.12 })
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.1 })
 
     document.querySelectorAll('[data-rise]').forEach((el) => seen.observe(el))
     return () => seen.disconnect()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps)
+  }, [])
 }
 
-/**
- * Le chapitre qui traverse le milieu de l'ecran donne sa couleur a la page.
- *
- * La marge de -50 % des deux cotes reduit la zone d'observation a une seule
- * ligne, au centre : une section est « a l'antenne » exactement quand elle
- * croise cette ligne, sans jamais deux reponses a la fois.
- */
+/** Le chapitre qui traverse le milieu de l'ecran donne sa couleur a la page. */
 export function useChapter(): Chapter | null {
   const [chapter, setChapter] = useState<Chapter | null>(null)
 
@@ -85,40 +88,166 @@ export function useChapter(): Chapter | null {
 }
 
 /**
- * Ecrit dans `--p` l'avancee de chaque element marque `data-par`, de -1
- * quand il arrive par le bas a +1 quand il sort par le haut.
+ * La boucle unique de la page.
  *
- * Une seule boucle pour toute la page, appelee au plus une fois par image :
- * un ecouteur de defilement par element ferait ramer le telephone.
+ * Le defilement du navigateur est brut : il saute d'un cran a l'autre. Au
+ * lieu de le confisquer — ce qui casse le clavier, le trackpad et les
+ * ancres — on le laisse tel quel et on LISSE les valeurs qu'on en tire :
+ * tout ce qui bouge suit une position amortie, avec un temps de retard.
+ * C'est ce retard qui donne la glisse, sans rien prendre a personne.
+ *
+ * Une seule boucle pour toute la page, et elle s'arrete d'elle-meme des que
+ * plus rien ne bouge : une boucle qui tourne pour rien vide une batterie.
  */
-export function useParallax() {
+export function useStage() {
   useEffect(() => {
-    const items = Array.from(document.querySelectorAll<HTMLElement>('[data-par]'))
-    if (!items.length) return
-    let queued = false
+    if (calm()) return
+    const root = document.documentElement
+    let items: HTMLElement[] = []
+    const measure = () => {
+      items = Array.from(document.querySelectorAll<HTMLElement>('[data-par]'))
+    }
+    measure()
 
-    const place = () => {
-      queued = false
+    let smooth = window.scrollY
+    let last = window.scrollY
+    let idle = 0
+    let frame = 0
+
+    const tick = () => {
+      const target = window.scrollY
+      smooth += (target - smooth) * 0.1
+      const speed = target - last
+      last = target
+
+      // La vitesse sert aux penchements : un bloc qui se redresse apres un
+      // coup de molette donne le poids que le defilement n'a pas.
+      root.style.setProperty('--vel', Math.max(-36, Math.min(36, speed)).toFixed(2))
+
       const height = window.innerHeight
+      const drift = target - smooth
       for (const el of items) {
         const box = el.getBoundingClientRect()
-        const middle = box.top + box.height / 2
-        const p = 1 - (middle / (height / 2))
-        el.style.setProperty('--p', Math.max(-1.5, Math.min(1.5, p)).toFixed(3))
+        // La boite est mesuree sur le defilement reel : on la ramene sur le
+        // defilement amorti, sinon le retard ne se voit pas.
+        const top = box.top + drift
+        // 0 quand le haut touche le bas de l'ecran, 1 quand le bas touche
+        // le haut de l'ecran.
+        const p = Math.max(0, Math.min(1, (height - top) / (height + box.height)))
+        el.style.setProperty('--p', p.toFixed(4))
+        el.style.setProperty('--pc', (p * 2 - 1).toFixed(4))
       }
-    }
-    const ask = () => {
-      if (queued) return
-      queued = true
-      requestAnimationFrame(place)
+
+      idle = Math.abs(drift) < 0.2 && Math.abs(speed) < 0.2 ? idle + 1 : 0
+      frame = idle < 30 ? requestAnimationFrame(tick) : 0
+      if (!frame) root.style.setProperty('--vel', '0')
     }
 
-    place()
-    window.addEventListener('scroll', ask, { passive: true })
-    window.addEventListener('resize', ask)
+    const wake = () => { if (!frame) { idle = 0; frame = requestAnimationFrame(tick) } }
+    const onResize = () => { measure(); wake() }
+    frame = requestAnimationFrame(tick)
+
+    window.addEventListener('scroll', wake, { passive: true })
+    window.addEventListener('resize', onResize)
     return () => {
-      window.removeEventListener('scroll', ask)
-      window.removeEventListener('resize', ask)
+      if (frame) cancelAnimationFrame(frame)
+      window.removeEventListener('scroll', wake)
+      window.removeEventListener('resize', onResize)
     }
   }, [])
+}
+
+/**
+ * Le curseur : un point d'encre qui suit la souris avec du retard, et qui
+ * s'ouvre en anneau au-dessus de ce qui se clique.
+ *
+ * Uniquement la ou il y a vraiment une souris : sur un ecran tactile il n'y
+ * a rien a suivre, et le point resterait colle dans un coin.
+ */
+export function useCursor() {
+  useEffect(() => {
+    if (calm() || !fine()) return
+
+    const dot = document.createElement('div')
+    dot.className = 'cursor'
+    dot.setAttribute('aria-hidden', 'true')
+    document.body.appendChild(dot)
+
+    let x = window.innerWidth / 2, y = window.innerHeight / 2
+    let cx = x, cy = y
+    let frame = requestAnimationFrame(function tick() {
+      cx += (x - cx) * 0.2
+      cy += (y - cy) * 0.2
+      dot.style.transform = `translate3d(${cx}px, ${cy}px, 0) translate(-50%, -50%)`
+      frame = requestAnimationFrame(tick)
+    })
+
+    const move = (e: PointerEvent) => {
+      x = e.clientX; y = e.clientY
+      dot.classList.add('is-on')
+      const target = e.target as HTMLElement | null
+      dot.classList.toggle('is-open', !!target?.closest?.('a, button, input, .cinema, .deck, .stage'))
+    }
+    const leave = () => dot.classList.remove('is-on')
+
+    window.addEventListener('pointermove', move, { passive: true })
+    document.addEventListener('pointerleave', leave)
+    return () => {
+      cancelAnimationFrame(frame)
+      window.removeEventListener('pointermove', move)
+      document.removeEventListener('pointerleave', leave)
+      dot.remove()
+    }
+  }, [])
+}
+
+/**
+ * Les boutons aimantes : le bouton vient vers la souris quand elle
+ * s'approche, et revient a sa place quand elle s'eloigne.
+ */
+export function useMagnets() {
+  useEffect(() => {
+    if (calm() || !fine()) return
+    const magnets = Array.from(document.querySelectorAll<HTMLElement>('[data-magnet]'))
+    if (!magnets.length) return
+
+    const move = (e: PointerEvent) => {
+      for (const el of magnets) {
+        const box = el.getBoundingClientRect()
+        const dx = e.clientX - (box.left + box.width / 2)
+        const dy = e.clientY - (box.top + box.height / 2)
+        const near = Math.hypot(dx, dy) < box.width / 2 + 80
+        el.style.setProperty('--mx', near ? `${(dx * 0.26).toFixed(1)}px` : '0px')
+        el.style.setProperty('--my', near ? `${(dy * 0.3).toFixed(1)}px` : '0px')
+      }
+    }
+    window.addEventListener('pointermove', move, { passive: true })
+    return () => window.removeEventListener('pointermove', move)
+  }, [])
+}
+
+/**
+ * Le rideau d'ouverture.
+ *
+ * Il n'existe que si le script tourne, il ne passe qu'une fois par visite,
+ * et il ne retient jamais la page : le contenu est deja peint dessous.
+ */
+export function useCurtain() {
+  const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    if (calm() || sessionStorage.getItem('kurso.vu') === '1') return
+    const root = document.documentElement
+    setOpen(true)
+    root.classList.add('curtain')
+    const t1 = setTimeout(() => root.classList.add('curtain-out'), 1150)
+    const t2 = setTimeout(() => {
+      root.classList.remove('curtain', 'curtain-out')
+      sessionStorage.setItem('kurso.vu', '1')
+      setOpen(false)
+    }, 2050)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
+  }, [])
+
+  return open
 }

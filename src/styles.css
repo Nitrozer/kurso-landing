@@ -118,13 +118,26 @@ h3 { font-size: 19px; line-height: 1.15; }
    est pre-rendue, et un texte qui attend un observateur pour exister est
    un texte absent pour qui coupe le script.
    ===================================================================== */
-html.motion [data-rise] {
+html.motion [data-rise]:not(.w):not(.mark):not(.scribble) {
   opacity: 0;
   transform: translateY(26px);
   transition: opacity 720ms var(--ease) var(--d, 0ms),
               transform 720ms var(--ease) var(--d, 0ms);
 }
-html.motion [data-rise].is-in { opacity: 1; transform: none; }
+html.motion [data-rise]:not(.w):not(.mark):not(.scribble).is-in { opacity: 1; transform: none; }
+
+/* --- les mots des titres ---------------------------------------------
+   Chaque mot vit dans une fenetre qui le coupe : il monte derriere le
+   bord au lieu d'apparaitre. Les marges negatives rendent a la ligne la
+   place prise par la fenetre, sinon les accents et les jambages seraient
+   rognes. */
+.w { display: inline-block; overflow: hidden; padding: 0.1em 0.04em 0.2em; margin: -0.1em -0.04em -0.2em; }
+.w > span { display: inline-block; }
+html.motion .w > span {
+  transform: translateY(118%) rotate(4deg);
+  transition: transform 920ms var(--ease) var(--d, 0ms);
+}
+html.motion .w.is-in > span { transform: none; }
 
 /* --- le surligneur ---------------------------------------------------- */
 .mark { position: relative; display: inline-block; color: var(--ink); z-index: 0; }
@@ -272,8 +285,19 @@ html[data-bg='green'] .dot { background: var(--ink); }
   background: #fff;
   box-shadow: 0 10px 0 var(--ink);
 }
-.tilt { transform: rotate(1.6deg) translateY(calc(var(--p, 0) * -14px)); }
-.tilt-rev { transform: rotate(-1.6deg) translateY(calc(var(--p, 0) * -14px)); }
+/* L'image d'un acte glisse contre son texte, et se redresse legerement
+   quand on la depasse. Le penchement suit la VITESSE du defilement : c'est
+   ce qui donne du poids a une page qui, sinon, glisse sans rien peser. */
+.tilt { transform: rotate(2deg); }
+.tilt-rev { transform: rotate(-2deg); }
+html.motion .act-art[data-par] {
+  transform: translateY(calc((var(--p, 0.5) - 0.5) * -130px))
+             skewY(calc(var(--vel, 0) * 0.02deg));
+}
+html.motion .act-art[data-par] .tilt { transform: rotate(calc(2deg + (var(--p, 0.5) - 0.5) * -4deg)); }
+html.motion .act-art[data-par] .tilt-rev { transform: rotate(calc(-2deg + (var(--p, 0.5) - 0.5) * 4deg)); }
+html.motion .social[data-par] { transform: translateY(calc((var(--p, 0.5) - 0.5) * -70px)); }
+html.motion .cta-art[data-par] { transform: translateY(calc((var(--p, 0.5) - 0.5) * -90px)); }
 
 /* =====================  00 · l'ouverture  ============================= */
 .open {
@@ -311,8 +335,21 @@ html[data-bg='green'] .dot { background: var(--ink); }
   overflow: hidden;
   background: var(--brand);
   box-shadow: 0 14px 0 var(--ink);
-  transform: rotate(-1.4deg) translateY(calc(var(--p, 0) * -20px));
+  transform: rotate(-1.4deg);
 }
+/* Le heros se demonte quand on le quitte : le texte part lentement, l'ecran
+   vite, Gribou plus vite encore. Trois vitesses, donc trois plans. */
+html.motion .open[data-par] .open-copy {
+  transform: translateY(calc((var(--p, 0.5) - 0.5) * -150px));
+  opacity: calc(1.5 - var(--p, 0.5) * 1);
+}
+html.motion .open[data-par] .screen {
+  transform: rotate(calc(-1.4deg + (var(--p, 0.5) - 0.5) * 2deg))
+             translateY(calc((var(--p, 0.5) - 0.5) * -300px))
+             scale(calc(1 + (var(--p, 0.5) - 0.5) * 0.1));
+}
+html.motion .open[data-par] .open-gribou { bottom: calc(-46px + (var(--p, 0.5) - 0.5) * -160px); }
+html.motion .open[data-par] .scroll { opacity: calc(1.4 - var(--p, 0.5) * 1.8); }
 .screen-video { display: block; width: 100%; height: auto; }
 .open-gribou {
   position: absolute;
@@ -343,78 +380,118 @@ html[data-bg='green'] .dot { background: var(--ink); }
   @keyframes nudge { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(5px); } }
 }
 
-/* =====================  01 · le film  ================================= */
-.film { display: grid; gap: 18px; }
-.cinema {
-  position: relative;
-  border: 3px solid var(--ink);
-  border-radius: 22px;
+/* =====================  01 · le film deroule  =========================
+   La section fait trois ecrans de haut ; la scene reste collee en haut
+   pendant qu'on les traverse. C'est ce decalage qui donne le defilement
+   du film : la page avance, l'image reste.
+   ===================================================================== */
+.act.scrub { height: 340svh; min-height: 0; display: block; padding-block: 0; }
+.stage {
+  position: sticky; top: 0;
+  height: 100svh;
+  display: grid; place-items: center;
   overflow: hidden;
-  background: var(--ink);
-  box-shadow: 0 14px 0 var(--ink);
+  /* La reglette du bas mesure une centaine de pixels : sans cette marge,
+     les chapitres tombaient hors de l'ecran. */
+  padding: clamp(66px, 9vh, 96px) clamp(22px, 5.6vw, 92px) clamp(148px, 20vh, 186px);
+}
+.stage-frame {
+  position: relative;
+  width: min(1180px, 100%);
   aspect-ratio: 16 / 9;
+  max-height: 100%;
+  /* Un liseré clair : le trait d'encre de l'app serait invisible sur un
+     acte encre. */
+  border: 3px solid rgba(255, 255, 255, 0.16);
+  border-radius: clamp(16px, 1.8vw, 26px);
+  overflow: hidden;
+  background: #0B1026;
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.45);
+  /* Le cadre grandit a mesure que le film avance : il prend l'ecran au
+     moment ou l'on est dedans. */
+  transform: scale(calc(0.93 + var(--sp, 0) * 0.07));
+  transition: transform 120ms linear;
 }
-html.motion .cinema[data-rise] { transform: translateY(26px) scale(0.965); }
-html.motion .cinema[data-rise].is-in { transform: none; }
-.cinema-video { width: 100%; height: 100%; display: block; object-fit: cover; }
+.stage-poster, .stage-canvas, .stage-video {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; display: block;
+}
+.stage-poster { z-index: 1; }
+.stage-canvas { z-index: 2; opacity: 0; transition: opacity 500ms var(--ease); }
+.stage-canvas.is-ready { opacity: 1; }
+.stage-video { z-index: 3; opacity: 0; pointer-events: none; background: #0B1026; }
+.stage-video.is-live { opacity: 1; pointer-events: auto; }
 
-.cinema-play {
-  position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center; gap: 18px;
-  border: 0; cursor: pointer;
-  background: rgba(19, 26, 51, 0.5);
-  transition: background-color 220ms ease;
-  color: #fff; font-family: var(--display); font-weight: 800; font-size: clamp(19px, 2.2vw, 28px);
-}
-.cinema-triangle {
-  width: 62px; height: 62px; border-radius: 999px;
-  background: var(--yellow); border: 3px solid var(--ink);
-  position: relative; flex: none;
-  transition: transform 260ms var(--ease);
-}
-.cinema-triangle::after {
-  content: ''; position: absolute; left: 52%; top: 50%;
-  transform: translate(-50%, -50%);
-  border-left: 18px solid var(--ink);
-  border-top: 12px solid transparent;
-  border-bottom: 12px solid transparent;
-}
-.cinema-play:hover { background: rgba(19, 26, 51, 0.38); }
-.cinema-play:hover .cinema-triangle { transform: scale(1.08); }
-/* Le titre est pose sur une plaque : l'affiche est une image de cours,
-   pleine d'ecriture, et du texte blanc pose dessus ne se lit pas. */
-.cinema-play-text {
-  display: grid; gap: 3px; text-align: left;
-  background: var(--ink); border: 3px solid var(--ink);
-  border-radius: 14px; padding: 10px 18px 12px;
-}
-.cinema-play-text small {
-  font-family: var(--mono); font-size: 11px; font-weight: 500;
-  letter-spacing: 0.16em; opacity: 0.8;
-}
+.stage-title { display: grid; }
+.stage-title > * { grid-area: 1 / 1; }
+.stage-copy { opacity: calc(1 - var(--sp, 0) * 22); }
+.stage-copy h2 { font-size: clamp(19px, 2.3vw, 28px); line-height: 1.05; }
+.stage-copy .label { margin-bottom: 7px; }
+.stage-act { opacity: calc(var(--sp, 0) * 22); }
 
-/* Sur un telephone, le cadre fait 220 px de haut : le bouton se met en
-   colonne, sinon le sous-titre sort du cadre. */
-@media (max-width: 640px) {
-  .cinema-play { flex-direction: column; gap: 10px; font-size: 18px; padding-inline: 18px; text-align: center; }
-  .cinema-play-text { text-align: center; }
-  .cinema-triangle { width: 50px; height: 50px; }
-  .cinema-triangle::after { border-left-width: 15px; border-top-width: 10px; border-bottom-width: 10px; }
+.stage-hud {
+  position: absolute;
+  left: clamp(22px, 5.6vw, 92px); right: clamp(22px, 5.6vw, 92px);
+  bottom: clamp(22px, 3.6vh, 36px);
+  z-index: 4;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px 20px;
 }
+.stage-act { grid-column: 1; }
+.stage-sound { grid-column: 2; grid-row: 1; justify-self: end; }
+.stage-bar { grid-column: 1 / -1; }
+.stage-act { display: flex; align-items: baseline; gap: 10px; margin: 0; }
+.stage-n { font-family: var(--mono); font-size: 11px; letter-spacing: 0.2em; opacity: 0.6; }
+.stage-name { font-family: var(--display); font-weight: 800; font-size: clamp(17px, 2vw, 25px); }
+.stage-bar { height: 3px; background: rgba(255, 255, 255, 0.22); border-radius: 999px; overflow: hidden; }
+.stage-bar span {
+  display: block; height: 100%; background: var(--yellow);
+  transform-origin: left center; transform: scaleX(0);
+}
+.stage-sound {
+  border: 2.5px solid currentColor; border-radius: 999px; background: none;
+  color: inherit; cursor: pointer; padding: 9px 18px;
+  font-family: var(--display); font-weight: 800; font-size: 15px;
+  transform: translate(var(--mx, 0), var(--my, 0));
+  transition: transform 260ms var(--ease), background-color 200ms ease, color 200ms ease;
+}
+.stage-sound:hover { background: var(--yellow); border-color: var(--yellow); color: var(--ink); }
 
-.acts { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.acts { display: flex; flex-wrap: wrap; gap: 7px; list-style: none; margin: 0; padding: 0; grid-column: 1 / -1; }
 .acts button {
-  display: inline-flex; align-items: baseline; gap: 9px;
-  border: 2.5px solid currentColor; border-radius: 999px;
-  background: none; color: var(--fg); cursor: pointer;
-  padding: 7px 15px; font: inherit; font-size: 13px; font-weight: 800;
-  transition: background-color 180ms ease, color 180ms ease;
+  display: inline-flex; align-items: baseline; gap: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.32); border-radius: 999px;
+  background: none; color: inherit; cursor: pointer;
+  padding: 6px 13px; font: inherit; font-size: 12.5px; font-weight: 800;
+  transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
 }
-.acts button:hover { background: var(--fg); color: var(--bg); }
-.acts-time { font-family: var(--mono); font-size: 11px; font-weight: 500; opacity: 0.7; }
+.acts button:hover { background: #fff; border-color: #fff; color: var(--ink); }
+.acts-time { font-family: var(--mono); font-size: 10.5px; font-weight: 500; opacity: 0.65; }
+
+/* Sans animation — par reglage systeme ou sur telephone — la section ne
+   garde aucune raison de faire trois ecrans de haut : elle se replie sur
+   une image fixe, un titre et les chapitres. */
+html:not(.motion) .act.scrub { height: auto; }
+html:not(.motion) .stage { position: static; height: auto; padding-block: clamp(70px, 10vh, 110px); }
+html:not(.motion) .stage-frame { transform: none; }
+html:not(.motion) .stage-copy { opacity: 1; }
+html:not(.motion) .stage-act { display: none; }
+html:not(.motion) .stage-hud { position: static; margin-top: 18px; grid-template-columns: 1fr; }
+html:not(.motion) .stage-bar { display: none; }
+
+@media (max-width: 900px) {
+  .act.scrub { height: auto; }
+  .stage { position: static; height: auto; padding-block: clamp(70px, 10vh, 110px); }
+  .stage-frame { transform: none; }
+  .stage-copy { position: static; opacity: 1; transform: none; margin-bottom: 22px; }
+  .stage-hud { position: static; margin-top: 18px; grid-template-columns: 1fr; }
+  .stage-bar { display: none; }
+}
 
 /* =====================  03 · la pile de cartes  ======================= */
-.deck { position: relative; padding: 18px 0 34px; transform: translateY(calc(var(--p, 0) * -14px)); }
+.deck { position: relative; padding: 18px 0 34px; }
 .deck-card {
   background: #fff; border: 3px solid var(--ink); border-radius: 18px;
   box-shadow: 0 8px 0 var(--ink);
@@ -424,6 +501,15 @@ html.motion .cinema[data-rise].is-in { transform: none; }
 .deck-2, .deck-3 { position: absolute; inset: 18px 0 auto 0; height: 88%; }
 .deck-2 { z-index: 2; transform: rotate(3deg) translate(14px, 10px); }
 .deck-3 { z-index: 1; transform: rotate(6.5deg) translate(28px, 20px); }
+/* La pile s'ouvre en eventail a mesure qu'on descend : trois cartes
+   empilees ne disent rien, trois cartes qui s'ecartent disent « il y en a
+   d'autres derriere ». */
+html.motion .act-art[data-par] .deck-2 {
+  transform: rotate(calc(3deg + var(--p, 0) * 5deg)) translate(calc(14px + var(--p, 0) * 22px), 10px);
+}
+html.motion .act-art[data-par] .deck-3 {
+  transform: rotate(calc(6.5deg + var(--p, 0) * 9deg)) translate(calc(28px + var(--p, 0) * 42px), 20px);
+}
 .deck-q {
   font-family: var(--display); font-weight: 800; color: var(--ink);
   font-size: clamp(21px, 2.3vw, 30px); line-height: 1.12; margin: 16px 0 20px;
@@ -544,10 +630,11 @@ html[data-bg='yellow'] :focus-visible { outline-color: var(--ink); }
   box-shadow: 0 5px 0 var(--ink); cursor: pointer;
   font-family: var(--display); font-weight: 800; font-size: 18px;
   background: var(--yellow); color: var(--ink);
-  transition: transform 140ms var(--ease), box-shadow 140ms var(--ease);
+  transition: transform 260ms var(--ease), box-shadow 160ms var(--ease);
 }
-.btn:hover { transform: translateY(-2px); box-shadow: 0 7px 0 var(--ink); }
-.btn:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--ink); }
+.btn { transform: translate(var(--mx, 0), var(--my, 0)); }
+.btn:hover { transform: translate(var(--mx, 0), calc(var(--my, 0) - 2px)); box-shadow: 0 7px 0 var(--ink); }
+.btn:active { transform: translate(var(--mx, 0), calc(var(--my, 0) + 3px)); box-shadow: 0 2px 0 var(--ink); }
 .btn[disabled] { opacity: 0.6; cursor: progress; }
 .btn-yellow { background: var(--yellow); color: var(--ink); }
 .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
@@ -585,3 +672,68 @@ html[data-bg='paper'] .note-err, html[data-bg='yellow'] .note-err { color: #B324
   background: rgba(255, 210, 77, 0.14);
   padding: 14px 18px; border-radius: 0 10px 10px 0; margin: 18px 0 14px;
 }
+
+
+/* =====================  la mise en scene  ============================
+   Le rideau, le grain et le curseur n'existent que si le script tourne et
+   que personne n'a demande moins d'animations. Ils n'ajoutent aucun mot a
+   la page : ce sont des habits, pas du contenu.
+   ===================================================================== */
+
+/* --- le rideau d'ouverture, une fois par visite --- */
+html.curtain { overflow: hidden; }
+.curtain-sheet {
+  position: fixed; inset: 0; z-index: 95;
+  background: var(--ink);
+  display: grid; place-items: center;
+  transition: transform 820ms var(--ease);
+}
+html.curtain-out .curtain-sheet { transform: translateY(-101%); }
+.curtain-mark {
+  width: clamp(74px, 9vw, 108px); aspect-ratio: 1; border-radius: 30%;
+  background: var(--brand); color: #fff;
+  display: grid; place-items: center;
+  font-family: var(--display); font-weight: 800; font-size: clamp(46px, 5.6vw, 68px);
+  animation: mark 880ms var(--ease) both;
+}
+@keyframes mark {
+  0% { transform: scale(0.62) rotate(-16deg); opacity: 0; }
+  55% { opacity: 1; }
+  100% { transform: none; opacity: 1; }
+}
+
+/* --- le grain : deux pour cent de bruit sur les aplats --- */
+.grain {
+  position: fixed; inset: -60%; z-index: 70;
+  pointer-events: none; opacity: 0.05;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
+}
+@media (prefers-reduced-motion: no-preference) {
+  .grain { animation: grain 900ms steps(5) infinite; }
+  @keyframes grain {
+    0%, 100% { transform: translate(0, 0); }
+    20% { transform: translate(-3%, 2%); }
+    40% { transform: translate(2%, -3%); }
+    60% { transform: translate(-2%, -2%); }
+    80% { transform: translate(3%, 1%); }
+  }
+}
+html:not(.motion) .grain { display: none; }
+
+/* --- le curseur ---
+   Un point en « difference » : il s'inverse tout seul sur chaque couleur,
+   et n'a donc jamais besoin d'etre repeint acte par acte. */
+.cursor {
+  position: fixed; top: 0; left: 0; z-index: 98;
+  width: 12px; height: 12px; border-radius: 999px;
+  background: #fff; border: 0 solid #fff;
+  mix-blend-mode: difference; pointer-events: none; opacity: 0;
+  transition: width 300ms var(--ease), height 300ms var(--ease),
+              border-width 300ms var(--ease), opacity 240ms linear;
+}
+.cursor.is-on { opacity: 1; }
+.cursor.is-open { width: 46px; height: 46px; background: transparent; border-width: 2px; }
+/* Le curseur du systeme s'efface la ou le point le remplace — mais jamais
+   dans un champ de saisie, ou l'on a besoin de viser entre deux lettres. */
+html.fine, html.fine a, html.fine button, html.fine .stage { cursor: none; }
+html.fine input, html.fine textarea { cursor: text; }

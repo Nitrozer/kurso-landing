@@ -1,3 +1,5 @@
+import { Fragment } from 'react'
+
 /** Les traits sont DESSINES, jamais empruntes a une bibliotheque d'icones :
  *  c'est la regle de l'app, et c'est ce qui fait que le site et le cahier
  *  ont la meme main. Chaque trace se pose au scroll, comme au feutre. */
@@ -22,6 +24,28 @@ export function Scribble({ children }: { children: React.ReactNode }) {
       </svg>
       <span className="scribble-word">{children}</span>
     </span>
+  )
+}
+
+/** Un titre mot a mot.
+ *
+ *  Chaque mot est dans une fenetre qui le coupe : il ne se contente pas
+ *  d'apparaitre, il MONTE derriere le bord, comme une ligne qu'on decouvre.
+ *  C'est le decalage entre les mots qui donne le rythme — tous ensemble,
+ *  cela ne serait qu'un fondu de plus. */
+export function Words({ text, d = 0 }: { text: string; d?: number }) {
+  const words = text.split(' ')
+  return (
+    <>
+      {words.map((word, i) => (
+        <Fragment key={`${word}-${i}`}>
+          <span className="w" data-rise style={{ '--d': `${d + i * 75}ms` } as React.CSSProperties}>
+            <span>{word}</span>
+          </span>
+          {i < words.length - 1 ? ' ' : null}
+        </Fragment>
+      ))}
+    </>
   )
 }
 
