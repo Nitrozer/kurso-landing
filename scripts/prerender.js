@@ -7,8 +7,9 @@ const { render, renderPrivacy } = await import('../dist-ssr/entry-server.js')
 let html = readFileSync('dist/index.html', 'utf8')
 html = html.replace('<!--app-html-->', render())
 
-// La feuille de style tient en 2 Ko compresses : la mettre en ligne evite
-// un aller-retour qui bloquait le premier rendu pendant ~700 ms.
+// La feuille de style tient en moins de 5 Ko compresses : la mettre en
+// ligne evite un aller-retour qui bloquait le premier rendu pendant
+// ~700 ms. Au-dela, il faudrait la laisser dans son fichier.
 const cssFile = readdirSync('dist/assets').find(f => f.endsWith('.css'))
 if (cssFile) {
   const css = readFileSync(join('dist/assets', cssFile), 'utf8')
@@ -17,11 +18,11 @@ if (cssFile) {
     .replace('</head>', `<style>${css}</style></head>`)
 }
 
-// L'image du heros est l'element LCP : le navigateur ne doit pas attendre
-// d'avoir lu le HTML pour la demander.
+// Gribou reste dans le heros, en second plan : il se precharge apres
+// l'affiche de la boucle, deja demandee depuis index.html.
 html = html.replace('</head>',
   '<link rel="preload" as="image" type="image/avif" ' +
-  'imagesrcset="/img/gribou.avif 1x, /img/gribou@2x.avif 2x" fetchpriority="high"></head>')
+  'imagesrcset="/img/gribou.avif 1x, /img/gribou@2x.avif 2x"></head>')
 
 writeFileSync('dist/index.html', html)
 
