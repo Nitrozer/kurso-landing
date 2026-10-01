@@ -1,1 +1,1 @@
-{"root":["./src/app.tsx","./src/privacy.tsx","./src/entry-server.tsx","./src/main.tsx","./src/components/filmscrub.tsx","./src/components/marks.tsx","./src/components/waitlistform.tsx","./src/lib/motion.ts","./src/lib/waitlist.ts"],"version":"5.9.3"}
+{"root":["./src/app.tsx","./src/privacy.tsx","./src/entry-server.tsx","./src/main.tsx","./src/components/film.tsx","./src/components/marks.tsx","./src/components/waitlistform.tsx","./src/lib/motion.ts","./src/lib/waitlist.ts","./src/scenes/ecris.tsx","./src/scenes/entoure.tsx"],"version":"5.9.3"}

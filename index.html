@@ -23,6 +23,19 @@
     <!-- L'affiche de la boucle est le premier pixel peint du heros : elle
          part avant que le film ne commence a se telecharger. -->
     <link rel="preload" href="/img/boucle-poster.jpg" as="image" fetchpriority="high" />
+    <!-- Pose la classe avant le premier rendu. Sans elle, la page s'affiche
+         d'abord dans son etat SANS animation — scenes jouees jusqu'au bout —
+         puis saute a leur debut quand React demarre. Et sans script du tout,
+         c'est justement cet etat final qui reste, qui est le bon. -->
+    <script>
+      try {
+        var r = document.documentElement
+        if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          r.className += ' motion'
+          if (matchMedia('(hover: hover) and (pointer: fine)').matches) r.className += ' fine'
+        }
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"><!--app-html--></div>

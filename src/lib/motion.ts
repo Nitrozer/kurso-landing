@@ -158,6 +158,54 @@ export function useStage() {
 }
 
 /**
+ * Les scenes.
+ *
+ * Une scene est une section haute de plusieurs ecrans dont le decor reste
+ * colle au milieu : on ne descend pas DANS la scene, on la joue. La boucle
+ * y ecrit `--q`, de 0 a 1, et toute la choregraphie se fait ensuite en CSS
+ * — chaque objet decoupe sa propre tranche de cette minute.
+ *
+ * Separee de `useStage` parce que la mesure n'est pas la meme : ici on veut
+ * l'avancee DANS la section collee, pas la traversee de l'ecran.
+ */
+export function useScenes() {
+  useEffect(() => {
+    if (calm()) return
+    let scenes: HTMLElement[] = []
+    const measure = () => {
+      scenes = Array.from(document.querySelectorAll<HTMLElement>('[data-scene]'))
+    }
+    measure()
+    if (!scenes.length) return
+
+    let frame = 0
+    const place = () => {
+      frame = 0
+      // Sous 900 px la scene n'est plus collee : elle se replie sur son
+      // etat final, decrit en CSS. Lui ecrire une avancee ici la laisserait
+      // vide, puisqu'il n'y a plus rien a traverser.
+      const narrow = window.innerWidth < 900
+      for (const scene of scenes) {
+        if (narrow) { scene.style.removeProperty('--q'); continue }
+        const box = scene.getBoundingClientRect()
+        const travel = box.height - window.innerHeight
+        const q = travel > 0 ? Math.max(0, Math.min(1, -box.top / travel)) : 0
+        scene.style.setProperty('--q', q.toFixed(4))
+      }
+    }
+    const ask = () => { if (!frame) frame = requestAnimationFrame(place) }
+
+    place()
+    window.addEventListener('scroll', ask, { passive: true })
+    window.addEventListener('resize', () => { measure(); ask() })
+    return () => {
+      if (frame) cancelAnimationFrame(frame)
+      window.removeEventListener('scroll', ask)
+    }
+  }, [])
+}
+
+/**
  * Le curseur : un point d'encre qui suit la souris avec du retard, et qui
  * s'ouvre en anneau au-dessus de ce qui se clique.
  *

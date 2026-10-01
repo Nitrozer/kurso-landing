@@ -1,8 +1,10 @@
 import WaitlistForm from './components/WaitlistForm'
-import FilmScrub from './components/FilmScrub'
-import { Arrow, Img, Marker, Scribble, Words } from './components/Marks'
+import Film from './components/Film'
+import Ecris from './scenes/Ecris'
+import Entoure from './scenes/Entoure'
+import { Arrow, Img, Marker, Words } from './components/Marks'
 import {
-  useChapter, useCursor, useCurtain, useMagnets, useMotion, useReveal, useStage,
+  useChapter, useCursor, useCurtain, useMagnets, useMotion, useReveal, useScenes, useStage,
 } from './lib/motion'
 
 const PROMISES = [
@@ -21,11 +23,15 @@ const FAQ = [
   { q: "C'est encore une app qui va me culpabiliser ?", a: "C'est l'inverse du projet. La série se gèle pendant les partiels, les cartes ratées reviennent sans punition, et la relance principale n'est pas une notification : c'est ton écriture qui pâlit doucement dans la page." },
 ]
 
+/** La ligue de la semaine. `de` est la place occupee AVANT la revision du
+ *  soir : la scene fait remonter « Toi » de la cinquieme a la troisieme,
+ *  et redescendre ceux qu'il double. Le classement final est celui-ci. */
 const LIGUE = [
-  { r: 1, n: 'Inès B.', xp: '1 480' },
-  { r: 2, n: 'Camille R.', xp: '1 310' },
-  { r: 3, n: 'Toi', xp: '1 270', moi: true },
-  { r: 4, n: 'Maxime D.', xp: '1 240' },
+  { r: 1, de: 1, n: 'Inès B.', xp: '1 480' },
+  { r: 2, de: 2, n: 'Camille R.', xp: '1 310' },
+  { r: 3, de: 5, n: 'Toi', xp: '1 270', moi: true },
+  { r: 4, de: 3, n: 'Maxime D.', xp: '1 240' },
+  { r: 5, de: 4, n: 'Sarah K.', xp: '1 095' },
 ]
 
 const ms = (n: number) => ({ '--d': `${n}ms` } as React.CSSProperties)
@@ -34,6 +40,7 @@ export default function App() {
   useMotion()
   useReveal()
   useStage()
+  useScenes()
   useCursor()
   useMagnets()
   const curtain = useCurtain()
@@ -111,57 +118,22 @@ export default function App() {
           </a>
         </section>
 
-        {/* ---- 01 · le film, déroulé au scroll --------------------- */}
-        <FilmScrub />
-
-        {/* ---- 02 · écris ------------------------------------------ */}
-        <section className="act" data-bg="blue" data-n="02" data-name="ÉCRIS">
-          <div className="gut act-split">
-            <div className="act-copy">
-              <p className="label" data-rise>LE PREMIER GESTE</p>
-              <h2><Words text="Écris." /><br /><Words text="Rien à classer." d={120} /></h2>
-              <p className="lede" data-rise style={ms(320)}>
-                Comme sur du papier. Ton emploi du temps range les pages pour toi :
-                la page ouverte à 8 h 15 le mardi est une page d'automatique, datée,
-                dans le bon cahier, sans que tu aies rien nommé.
-              </p>
-              <p className="say" data-rise style={ms(400)}><b>4 cahiers, zéro dossier.</b></p>
+        {/* ---- 01 · la bande-annonce ------------------------------- */}
+        <section className="act film-act" id="film" data-bg="ink" data-n="01" data-name="LE FILM">
+          <div className="gut">
+            <div className="act-head">
+              <p className="label" data-rise>CHAPITRE 01 · SOIXANTE SECONDES</p>
+              <h2><Words text="Une minute," /><br /><Words text="et tu as tout vu." d={180} /></h2>
             </div>
-            <div className="act-art" data-par data-rise style={ms(180)}>
-              <div className="frame tilt">
-                <Img name="shot-canevas" alt="Le canevas : une page manuscrite, presque aucune interface autour." w={560} h={420} />
-              </div>
-            </div>
+            <Film />
           </div>
         </section>
 
-        {/* ---- 03 · entoure ---------------------------------------- */}
-        <section className="act" data-bg="yellow" data-n="03" data-name="ENTOURE">
-          <div className="gut act-split act-split-rev">
-            <div className="act-copy">
-              <p className="label" data-rise>LE DEUXIÈME GESTE</p>
-              <h2><Scribble>Entoure</Scribble><br /><Words text="un passage." d={220} /></h2>
-              <p className="lede" data-rise style={ms(380)}>
-                Il devient une carte de révision — avec ton écriture, telle quelle.
-                Une échéance écrite à la main devient une tâche. Rien n'est généré :
-                Kurso lit ce que tu as écrit, et te le rend au bon moment.
-              </p>
-            </div>
-            <div className="act-art" data-par data-rise style={ms(180)}>
-              {/* La pile de cartes du film, refaite en CSS : elle s'ouvre en
-                  éventail à mesure qu'on descend. */}
-              <div className="deck">
-                <article className="deck-card deck-3" aria-hidden="true" />
-                <article className="deck-card deck-2" aria-hidden="true" />
-                <article className="deck-card deck-1">
-                  <p className="chip">RECTO / VERSO<span>CAPTURÉE LE 15.09 · PAGE 3</span></p>
-                  <p className="deck-q">Coût d'une insertion<br />dans un tas binaire ?</p>
-                  <p className="deck-foot"><b>+2 XP à chaud</b><span>VERSO · TON ÉCRITURE</span></p>
-                </article>
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* ---- 02 · écris : l'emploi du temps se range ------------- */}
+        <Ecris />
+
+        {/* ---- 03 · entoure : une ligne devient une carte ----------- */}
+        <Entoure />
 
         {/* ---- 04 · reviens ---------------------------------------- */}
         <section className="act" data-bg="green" data-n="04" data-name="REVIENS">
@@ -237,12 +209,25 @@ export default function App() {
                 <p className="code-value">K7M-3QX</p>
                 <p className="code-note">Donne-le de vive voix. Personne ne peut te chercher par ton prénom.</p>
               </article>
-              <article className="card ligue" data-rise style={ms(120)}>
+              {/* Le classement se remet en ordre sous les yeux : « Toi »
+                  remonte de deux places, les autres se decalent. Une liste
+                  deja triee ne dirait rien du soir ou on l'a gagnee. */}
+              <article className="card ligue" data-par data-rise style={ms(120)}>
                 <p className="label">LIGUE 2B · CETTE SEMAINE</p>
                 <ol>
-                  {LIGUE.map((l, i) => (
-                    <li key={l.r} className={l.moi ? 'moi' : undefined} data-rise style={ms(200 + i * 70)}>
-                      <span className="ligue-r">{l.r}</span>
+                  {LIGUE.map((l) => (
+                    <li
+                      key={l.r}
+                      className={l.moi ? 'moi' : undefined}
+                      style={{ '--saut': l.de - l.r } as React.CSSProperties}
+                    >
+                      {/* Les deux rangs, l'un sur l'autre : celui d'avant
+                          s'efface pendant que la ligne monte. Afficher tout
+                          de suite le rang final donnait une liste numerotee
+                          1, 2, 4, 5, 3. */}
+                      <span className="ligue-r">
+                        <i>{l.de}</i><b>{l.r}</b>
+                      </span>
                       <span className="ligue-n">{l.n}</span>
                       {l.r <= 3 && <span className="ligue-up">MONTE</span>}
                       <span className="ligue-xp">{l.xp} XP</span>

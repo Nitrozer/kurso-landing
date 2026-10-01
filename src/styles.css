@@ -380,114 +380,307 @@ html.motion .open[data-par] .scroll { opacity: calc(1.4 - var(--p, 0.5) * 1.8); 
   @keyframes nudge { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(5px); } }
 }
 
-/* =====================  01 · le film deroule  =========================
-   La section fait trois ecrans de haut ; la scene reste collee en haut
-   pendant qu'on les traverse. C'est ce decalage qui donne le defilement
-   du film : la page avance, l'image reste.
-   ===================================================================== */
-.act.scrub { height: 340svh; min-height: 0; display: block; padding-block: 0; }
-.stage {
-  position: sticky; top: 0;
-  height: 100svh;
-  display: grid; place-items: center;
-  overflow: hidden;
-  /* La reglette du bas mesure une centaine de pixels : sans cette marge,
-     les chapitres tombaient hors de l'ecran. */
-  padding: clamp(66px, 9vh, 96px) clamp(22px, 5.6vw, 92px) clamp(148px, 20vh, 186px);
-}
-.stage-frame {
-  position: relative;
-  width: min(1180px, 100%);
-  aspect-ratio: 16 / 9;
-  max-height: 100%;
-  /* Un liseré clair : le trait d'encre de l'app serait invisible sur un
-     acte encre. */
-  border: 3px solid rgba(255, 255, 255, 0.16);
-  border-radius: clamp(16px, 1.8vw, 26px);
-  overflow: hidden;
-  background: #0B1026;
+/* =====================  01 · la bande-annonce  ======================= */
+.film { display: grid; gap: 16px; }
+.cinema {
+  position: relative; aspect-ratio: 16 / 9;
+  border: 3px solid rgba(255, 255, 255, 0.18);
+  border-radius: clamp(16px, 1.8vw, 24px);
+  overflow: hidden; background: #0B1026;
   box-shadow: 0 22px 60px rgba(0, 0, 0, 0.45);
-  /* Le cadre grandit a mesure que le film avance : il prend l'ecran au
-     moment ou l'on est dedans. */
-  transform: scale(calc(0.93 + var(--sp, 0) * 0.07));
-  transition: transform 120ms linear;
 }
-.stage-poster, .stage-canvas, .stage-video {
-  position: absolute; inset: 0; width: 100%; height: 100%;
-  object-fit: cover; display: block;
+html.motion .cinema[data-rise] { transform: translateY(30px) scale(0.965); }
+html.motion .cinema[data-rise].is-in { transform: none; }
+html.motion .cinema[data-par].is-in {
+  transform: translateY(calc((var(--p, 0.5) - 0.5) * -60px)) scale(1);
 }
-.stage-poster { z-index: 1; }
-.stage-canvas { z-index: 2; opacity: 0; transition: opacity 500ms var(--ease); }
-.stage-canvas.is-ready { opacity: 1; }
-.stage-video { z-index: 3; opacity: 0; pointer-events: none; background: #0B1026; }
-.stage-video.is-live { opacity: 1; pointer-events: auto; }
-
-.stage-title { display: grid; }
-.stage-title > * { grid-area: 1 / 1; }
-.stage-copy { opacity: calc(1 - var(--sp, 0) * 22); }
-.stage-copy h2 { font-size: clamp(19px, 2.3vw, 28px); line-height: 1.05; }
-.stage-copy .label { margin-bottom: 7px; }
-.stage-act { opacity: calc(var(--sp, 0) * 22); }
-
-.stage-hud {
-  position: absolute;
-  left: clamp(22px, 5.6vw, 92px); right: clamp(22px, 5.6vw, 92px);
-  bottom: clamp(22px, 3.6vh, 36px);
-  z-index: 4;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 12px 20px;
+.cinema-video { width: 100%; height: 100%; display: block; object-fit: cover; }
+.cinema-play {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center; gap: 18px;
+  border: 0; cursor: pointer; color: #fff;
+  background: rgba(19, 26, 51, 0.5);
+  font-family: var(--display); font-weight: 800; font-size: clamp(19px, 2.2vw, 28px);
+  transition: background-color 220ms ease;
 }
-.stage-act { grid-column: 1; }
-.stage-sound { grid-column: 2; grid-row: 1; justify-self: end; }
-.stage-bar { grid-column: 1 / -1; }
-.stage-act { display: flex; align-items: baseline; gap: 10px; margin: 0; }
-.stage-n { font-family: var(--mono); font-size: 11px; letter-spacing: 0.2em; opacity: 0.6; }
-.stage-name { font-family: var(--display); font-weight: 800; font-size: clamp(17px, 2vw, 25px); }
-.stage-bar { height: 3px; background: rgba(255, 255, 255, 0.22); border-radius: 999px; overflow: hidden; }
-.stage-bar span {
-  display: block; height: 100%; background: var(--yellow);
-  transform-origin: left center; transform: scaleX(0);
-}
-.stage-sound {
-  border: 2.5px solid currentColor; border-radius: 999px; background: none;
-  color: inherit; cursor: pointer; padding: 9px 18px;
-  font-family: var(--display); font-weight: 800; font-size: 15px;
+.cinema-play:hover { background: rgba(19, 26, 51, 0.36); }
+.cinema-triangle {
+  width: 62px; height: 62px; border-radius: 999px; flex: none; position: relative;
+  background: var(--yellow); border: 3px solid var(--ink);
   transform: translate(var(--mx, 0), var(--my, 0));
-  transition: transform 260ms var(--ease), background-color 200ms ease, color 200ms ease;
+  transition: transform 260ms var(--ease);
 }
-.stage-sound:hover { background: var(--yellow); border-color: var(--yellow); color: var(--ink); }
-
-.acts { display: flex; flex-wrap: wrap; gap: 7px; list-style: none; margin: 0; padding: 0; grid-column: 1 / -1; }
+.cinema-triangle::after {
+  content: ''; position: absolute; left: 52%; top: 50%; transform: translate(-50%, -50%);
+  border-left: 18px solid var(--ink);
+  border-top: 12px solid transparent; border-bottom: 12px solid transparent;
+}
+/* Le titre est pose sur une plaque : l'affiche est une image de cours,
+   pleine d'ecriture, et du texte blanc pose dessus ne se lit pas. */
+.cinema-play-text {
+  display: grid; gap: 3px; text-align: left;
+  background: var(--ink); border: 3px solid var(--ink);
+  border-radius: 14px; padding: 10px 18px 12px;
+}
+.cinema-play-text small {
+  font-family: var(--mono); font-size: 11px; font-weight: 500;
+  letter-spacing: 0.16em; opacity: 0.8;
+}
+.acts { display: flex; flex-wrap: wrap; gap: 7px; list-style: none; margin: 0; padding: 0; }
 .acts button {
   display: inline-flex; align-items: baseline; gap: 8px;
-  border: 2px solid rgba(255, 255, 255, 0.32); border-radius: 999px;
+  border: 2px solid currentColor; border-radius: 999px;
   background: none; color: inherit; cursor: pointer;
   padding: 6px 13px; font: inherit; font-size: 12.5px; font-weight: 800;
-  transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
+  transition: background-color 180ms ease, color 180ms ease;
 }
-.acts button:hover { background: #fff; border-color: #fff; color: var(--ink); }
+.acts button:hover { background: var(--fg); color: var(--bg); }
 .acts-time { font-family: var(--mono); font-size: 10.5px; font-weight: 500; opacity: 0.65; }
+@media (max-width: 640px) {
+  .cinema-play { flex-direction: column; gap: 10px; font-size: 18px; padding-inline: 18px; text-align: center; }
+  .cinema-play-text { text-align: center; }
+  .cinema-triangle { width: 50px; height: 50px; }
+  .cinema-triangle::after { border-left-width: 15px; border-top-width: 10px; border-bottom-width: 10px; }
+}
 
-/* Sans animation — par reglage systeme ou sur telephone — la section ne
-   garde aucune raison de faire trois ecrans de haut : elle se replie sur
-   une image fixe, un titre et les chapitres. */
-html:not(.motion) .act.scrub { height: auto; }
-html:not(.motion) .stage { position: static; height: auto; padding-block: clamp(70px, 10vh, 110px); }
-html:not(.motion) .stage-frame { transform: none; }
-html:not(.motion) .stage-copy { opacity: 1; }
-html:not(.motion) .stage-act { display: none; }
-html:not(.motion) .stage-hud { position: static; margin-top: 18px; grid-template-columns: 1fr; }
-html:not(.motion) .stage-bar { display: none; }
+/* =====================  les scenes  ==================================
+   Une scene fait trois ecrans de haut et son decor reste colle au milieu :
+   on ne la traverse pas, on la joue. `--q` va de 0 a 1 d'un bout a l'autre,
+   et chaque objet y decoupe sa tranche — c'est tout le montage. Comme rien
+   n'est declenche par un evenement, remonter rejoue la scene a l'envers.
+   ===================================================================== */
+.act.scene-act { height: 260svh; min-height: 0; display: block; padding-block: 0; }
+.scene {
+  position: sticky; top: 0; height: 100svh;
+  display: grid; align-items: center;
+  padding-block: clamp(70px, 10vh, 110px) clamp(30px, 5vh, 60px);
+  overflow: hidden;
+}
+.scene-grid {
+  display: grid; grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
+  gap: clamp(26px, 3.6vw, 68px); align-items: center;
+}
+/* En inversant l'ordre, il faut aussi inverser le gabarit : sinon l'art
+   passe dans la colonne etroite et la scene se joue dans un timbre-poste. */
+.scene-grid-rev { grid-template-columns: minmax(0, 1.14fr) minmax(0, 0.86fr); }
+.scene-grid-rev .scene-copy { order: 2; }
+.scene-grid-rev .scene-art { order: 1; }
+.scene-art { position: relative; width: 100%; }
+.scene-count { margin: 22px 0 0; font-size: 15px; color: var(--soft); }
+.scene-count b { color: var(--fg); }
+
+/* --- 02 · la semaine qui se range ------------------------------------- */
+.semaine {
+  position: relative; width: 68%;
+  background: #fff; border: 3px solid var(--ink); border-radius: 18px;
+  box-shadow: 0 10px 0 var(--ink);
+  padding: 15px 16px 14px; aspect-ratio: 1.3;
+  display: flex; flex-direction: column;
+  transform: rotate(calc((1 - var(--q, 0)) * -2deg)) scale(calc(0.965 + var(--q, 0) * 0.035));
+}
+.semaine-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  margin: 0 0 9px; font-family: var(--mono); font-size: 8.5px;
+  letter-spacing: 0.12em; color: var(--muted);
+}
+.semaine-ics {
+  background: var(--brand); color: #fff; border-radius: 999px; padding: 3px 9px;
+  opacity: clamp(0, calc((var(--q, 0) - 0.02) / 0.1), 1);
+}
+.semaine-days {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em;
+  color: var(--muted); padding-bottom: 5px;
+}
+.semaine-body { position: relative; flex: 1; border-top: 2px solid var(--line); }
+.semaine-col { position: absolute; top: 0; bottom: 0; width: 20%; border-right: 1px solid var(--line); }
+.seance {
+  position: absolute; left: var(--x); top: var(--y); width: var(--w); height: var(--h);
+  margin-top: 4px;
+  border: 2.5px solid var(--ink); border-radius: 8px;
+  padding: 5px 6px; font-size: 10px; font-weight: 800; color: var(--ink);
+  display: block; overflow: hidden;
+  /* Chaque seance a sa tranche, decalee : elles se posent l'une apres
+     l'autre, pas toutes d'un bloc. */
+  --a: clamp(0, calc((var(--q, 0) - var(--d, 0)) / 0.3), 1);
+  transform:
+    translate(calc((1 - var(--a)) * var(--fx)), calc((1 - var(--a)) * var(--fy)))
+    rotate(calc((1 - var(--a)) * var(--rot)))
+    scale(calc(0.78 + var(--a) * 0.22));
+  opacity: var(--a);
+}
+.t-bleu { background: #C9D4FF; }
+.t-vert { background: #9FE8C4; }
+.t-jaune { background: #FFE79B; }
+.t-rose { background: #FFC6D0; }
+
+/* Les cahiers se posent a cote de la grille, pas dessus : ils en mangeaient
+   deux colonnes. */
+.cahiers {
+  position: absolute; right: 0; bottom: 6%; width: 34%;
+  display: grid; gap: 7px; list-style: none; margin: 0; padding: 0;
+}
+.cahier {
+  --a: clamp(0, calc((var(--q, 0) - 0.5 - var(--d, 0)) / 0.2), 1);
+  background: #fff; border: 3px solid var(--ink); border-radius: 12px;
+  box-shadow: 0 5px 0 var(--ink); padding: 8px 11px;
+  display: grid; gap: 1px;
+  border-left-width: 10px;
+  transform: translateX(calc((1 - var(--a)) * 180px)) scale(calc(0.88 + var(--a) * 0.12));
+  opacity: var(--a);
+}
+.cahier b { font-size: 12px; color: var(--ink); }
+.cahier span { font-family: var(--mono); font-size: 8.5px; color: var(--muted); }
+.cahier.t-bleu { border-left-color: var(--brand); background: #fff; }
+.cahier.t-vert { border-left-color: var(--green); background: #fff; }
+.cahier.t-rose { border-left-color: var(--pink); background: #fff; }
+.cahier.t-jaune { border-left-color: var(--yellow); background: #fff; }
+
+/* --- 03 · la ligne qui devient une carte ------------------------------- */
+.naissance {
+  position: relative; aspect-ratio: 1.22;
+  /* Les cinq temps de la scene, tous tires du meme `--q`. */
+  --w1: clamp(0, calc(var(--q, 0) / 0.17), 1);
+  --w2: clamp(0, calc((var(--q, 0) - 0.17) / 0.19), 1);
+  --w3: clamp(0, calc((var(--q, 0) - 0.37) / 0.21), 1);
+  --w4: clamp(0, calc((var(--q, 0) - 0.56) / 0.26), 1);
+  --w5: clamp(0, calc((var(--q, 0) - 0.82) / 0.18), 1);
+}
+.page {
+  position: absolute; left: 0; top: 4%; width: 62%; height: 80%;
+  background: #fff; border: 3px solid var(--ink); border-radius: 16px;
+  box-shadow: 0 10px 0 var(--ink); padding: 16px 18px;
+  transform: scale(calc(1 - var(--w3) * 0.05)) rotate(calc(var(--w3) * -1.2deg));
+}
+.page-head {
+  display: flex; align-items: center; gap: 9px; margin: 0 0 16px;
+  font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.12em; color: var(--muted);
+}
+.page-tag { background: var(--brand); color: #fff; border-radius: 999px; padding: 3px 8px; }
+.page-rule { position: absolute; left: 18px; right: 18px; height: 1.5px; background: var(--line); }
+.page-rule.r1 { top: 34%; } .page-rule.r2 { top: 50%; }
+.page-rule.r3 { top: 66%; } .page-rule.r4 { top: 82%; }
+.page-before, .page-after {
+  position: absolute; left: 20px; font-family: var(--hand); font-weight: 700;
+  font-size: clamp(15px, 1.5vw, 21px); color: #1E2A55;
+  clip-path: inset(0 calc((1 - var(--w1)) * 100%) 0 0);
+}
+.page-before { top: 26%; }
+.page-after { top: 58%; }
+
+/* Le trajet complet : il decolle de la ligne (w3), se retourne (w4), puis
+   va se poser sur la pile en bas a droite (w5). Les pourcentages sont
+   relatifs au morceau lui-meme, pas a la scene. */
+.morceau {
+  position: absolute; left: 7%; top: 40%; width: 50%; z-index: 3;
+  transform:
+    translate(calc(var(--w3) * 18% + var(--w5) * 72%), calc(var(--w3) * -12% + var(--w5) * 52%))
+    scale(calc(1 + var(--w3) * 0.2 - var(--w5) * 0.2))
+    rotate(calc(var(--w3) * -3deg + var(--w5) * 7deg));
+  filter: drop-shadow(0 calc(var(--w3) * 22px) calc(var(--w3) * 28px) rgba(19, 26, 51, calc(var(--w3) * 0.34)));
+}
+/* Le retournement est une vraie rotation dans l'espace, recto contre
+   verso : c'est ce qui fait croire que la ligne DEVIENT la carte, au lieu
+   de voir deux objets se remplacer.
+   La boite s'epaissit en decollant : une ligne de cours est plate, une
+   carte ne l'est pas — sans cela le verso deborde de son cadre. */
+.morceau-flip {
+  position: relative; transform-style: preserve-3d;
+  aspect-ratio: calc(3.4 - var(--w3) * 1.75);
+  transform: perspective(1500px) rotateY(calc(var(--w4) * 180deg));
+}
+.face { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.recto {
+  position: absolute; inset: 0; background: #fff;
+  border: 2.5px solid rgba(19, 26, 51, calc(var(--w3) * 1));
+  border-radius: 12px; padding: 12px 14px;
+  display: flex; align-items: center;
+}
+.recto-mot {
+  display: block; font-family: var(--hand); font-weight: 700;
+  font-size: clamp(17px, 1.8vw, 25px); color: #1E2A55;
+  clip-path: inset(0 calc((1 - var(--w1)) * 100%) 0 0);
+}
+/* Le feutre appartient a la page, pas a la carte : il s'efface pendant le
+   retournement, sinon il s'etire avec la boite qui change de forme. */
+.recto-loop {
+  position: absolute; left: 2%; top: -10%; width: 96%; height: 120%; overflow: visible;
+  opacity: calc(1 - var(--w4));
+}
+.recto-loop path {
+  fill: none; stroke: var(--ink); stroke-width: 1.8;
+  stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 300; stroke-dashoffset: calc(300 - var(--w2) * 300);
+}
+.verso {
+  position: absolute; inset: 0; transform: rotateY(180deg);
+  background: #fff; border: 3px solid var(--ink); border-radius: 12px;
+  box-shadow: 0 7px 0 var(--ink); padding: 11px 13px 10px;
+  display: flex; flex-direction: column; justify-content: space-between;
+}
+.verso .chip { font-size: 8px; padding: 3px 8px; }
+.verso .chip span { padding-left: 8px; }
+.verso-q {
+  font-family: var(--display); font-weight: 800; color: var(--ink);
+  font-size: clamp(13px, 1.25vw, 19px); line-height: 1.14; margin: 7px 0;
+}
+.verso-foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0;
+  font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.1em; color: var(--muted);
+}
+.verso-foot b { color: var(--green); }
+
+/* La pile vit DANS le morceau : elle est donc toujours exactement derriere
+   lui, quelle que soit la ou il se pose. */
+.pile-c {
+  position: absolute; inset: 0; background: #fff;
+  border: 3px solid var(--ink); border-radius: 12px;
+  opacity: calc(var(--w5) * 0.95);
+}
+.pile-c.c1 { transform: rotate(calc(5deg * var(--w5))) translate(calc(9px * var(--w5)), calc(9px * var(--w5))); }
+.pile-c.c2 { transform: rotate(calc(10deg * var(--w5))) translate(calc(19px * var(--w5)), calc(18px * var(--w5))); }
+.pile-n {
+  position: absolute; left: 4px; bottom: -24px;
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em;
+  color: var(--soft); opacity: var(--w5);
+}
+
+/* Les quatre temps, ecrits a cote : ils s'allument quand leur moment
+   arrive. On lit ce qu'on est en train de voir. */
+.temps { list-style: none; margin: 26px 0 0; padding: 0; display: grid; gap: 7px; }
+.temps li {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--fg);
+  padding-left: 18px; position: relative;
+}
+.temps li::before {
+  content: ''; position: absolute; left: 0; top: 0.42em;
+  width: 8px; height: 8px; border-radius: 999px;
+  border: 2px solid currentColor;
+}
+.temps .t1 { opacity: calc(0.3 + 0.7 * clamp(0, calc(var(--q, 0) / 0.17), 1)); }
+.temps .t2 { opacity: calc(0.3 + 0.7 * clamp(0, calc((var(--q, 0) - 0.17) / 0.19), 1)); }
+.temps .t3 { opacity: calc(0.3 + 0.7 * clamp(0, calc((var(--q, 0) - 0.37) / 0.21), 1)); }
+.temps .t4 { opacity: calc(0.3 + 0.7 * clamp(0, calc((var(--q, 0) - 0.56) / 0.26), 1)); }
+
+/* Sans animation, une scene n'a plus de raison de faire trois ecrans : on
+   la replie sur son etat final, qui est aussi celui que montre le HTML
+   pre-rendu. */
+html:not(.motion) .act.scene-act { height: auto; }
+html:not(.motion) .scene { position: static; height: auto; overflow: visible; }
+html:not(.motion) .scene-act { --q: 1; }
 
 @media (max-width: 900px) {
-  .act.scrub { height: auto; }
-  .stage { position: static; height: auto; padding-block: clamp(70px, 10vh, 110px); }
-  .stage-frame { transform: none; }
-  .stage-copy { position: static; opacity: 1; transform: none; margin-bottom: 22px; }
-  .stage-hud { position: static; margin-top: 18px; grid-template-columns: 1fr; }
-  .stage-bar { display: none; }
+  .act.scene-act { height: auto; }
+  /* Depliee, la scene n'a plus de cadre a respecter : la carte posee
+     debordait par le bas et se faisait couper par la fin de l'acte. */
+  .scene { position: static; height: auto; overflow: visible; padding-block: clamp(70px, 10vh, 110px); }
+  .naissance { aspect-ratio: 1.08; }
+  .scene-grid { grid-template-columns: 1fr; }
+  .scene-grid-rev .scene-copy, .scene-grid-rev .scene-art { order: initial; }
+  .semaine { width: 100%; }
+  .cahiers { position: static; width: 100%; margin-top: 14px; }
+  .scene-act { --q: 1; }
 }
 
 /* =====================  03 · la pile de cartes  ======================= */
@@ -566,12 +759,38 @@ html.motion .act-art[data-par] .deck-3 {
 .code-note { font-size: 13px; line-height: 1.5; color: var(--body); margin: 14px 0 0; }
 
 .ligue ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.ligue ol { --row: 42px; }
 .ligue li {
   display: grid; grid-template-columns: 26px 1fr auto auto; align-items: center; gap: 12px;
   padding: 10px 12px; border-radius: 12px; font-size: 14.5px; color: var(--ink);
+  height: var(--row);
+}
+/* Le classement se remet en ordre pendant qu'on le regarde : chaque ligne
+   part de la place qu'elle occupait avant la revision du soir, et glisse
+   vers la sienne. Une liste deja triee ne dirait rien du soir ou on l'a
+   gagnee. */
+html.motion .ligue[data-par] li {
+  --a: clamp(0, calc((var(--p, 0) - 0.3) / 0.28), 1);
+  transform: translateY(calc((1 - var(--a)) * var(--saut, 0) * var(--row)));
+}
+html.motion .ligue[data-par] .ligue-up {
+  opacity: clamp(0, calc((var(--p, 0) - 0.52) / 0.12), 1);
+}
+html.motion .ligue[data-par] li.moi {
+  box-shadow: 0 0 0 calc(clamp(0, calc((var(--p, 0) - 0.5) / 0.1), 1) * 2.5px) var(--ink);
+  outline: none;
 }
 .ligue li.moi { background: #FFF6DC; outline: 2.5px solid var(--ink); }
-.ligue-r { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+html.motion .ligue[data-par] li.moi { outline-color: transparent; }
+.ligue-r {
+  font-family: var(--mono); font-size: 12px; color: var(--muted);
+  display: grid; font-style: normal;
+}
+.ligue-r > i, .ligue-r > b { grid-area: 1 / 1; font-style: normal; font-weight: 500; }
+.ligue-r > i { opacity: 0; }
+.ligue-r > b { opacity: 1; }
+html.motion .ligue[data-par] .ligue-r > i { opacity: calc(1 - var(--a, 1)); }
+html.motion .ligue[data-par] .ligue-r > b { opacity: var(--a, 1); }
 .ligue-up {
   font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em;
   background: var(--green); color: #fff; border-radius: 999px; padding: 3px 8px;
