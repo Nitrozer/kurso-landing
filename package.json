@@ -4,19 +4,17 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build && vite build --ssr src/entry-server.tsx --outDir dist-ssr && node scripts/prerender.js",
+    "page": "node tools/build-page.mjs",
+    "dev": "npm run page && vite",
+    "build": "npm run page && vite build",
     "preview": "vite preview --port 4173",
     "lighthouse": "lighthouse http://localhost:4173 --preset=desktop --quiet --chrome-flags=\"--headless\" --output=json --output=html --output-path=./lighthouse"
   },
   "dependencies": {
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "lenis": "^1.1.13",
+    "three": "^0.169.0"
   },
   "devDependencies": {
-    "@types/react": "^19.2.0",
-    "@types/react-dom": "^19.2.0",
-    "@vitejs/plugin-react": "^5.0.0",
     "typescript": "^5.9.0",
     "vite": "^7.1.0"
   }

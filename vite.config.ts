@@ -1,13 +1,18 @@
 import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
 
+// La page est du HTML statique : pas de framework, pas d'hydratation. Vite ne
+// sert plus qu'a empaqueter le script de mouvement, three.js et Lenis.
 export default defineConfig({
-  plugins: [react()],
   build: {
     target: 'es2022',
     cssCodeSplit: false,
-    // Une page unique : un seul fichier JS evite une cascade de requetes.
-    rollupOptions: { output: { manualChunks: undefined } },
     reportCompressedSize: true,
+    rollupOptions: {
+      output: {
+        // three.js part dans son propre morceau, charge seulement quand la
+        // scene 3D demarre : la page s'affiche sans l'attendre.
+        manualChunks: (id) => (id.includes('node_modules/three') ? 'three' : undefined),
+      },
+    },
   },
 })
