@@ -57,6 +57,57 @@ for (const type of ['click', 'input']) {
   }
 }
 
+// ------------------------------------------------------------- le son
+// Les navigateurs interdisent tout son avant un geste de l'utilisateur : une
+// page qui se mettrait a sonner toute seule au chargement serait bloquee, et
+// c'est voulu. La maquette, elle, n'ouvrait meme le contexte audio qu'au
+// moment ou l'on appuyait sur l'ouverture — donc pas un bruit avant.
+//
+// On fait donc trois choses :
+//   — ouvrir le contexte des le depart et tenter de le demarrer. Un visiteur
+//     qui connait deja le site se voit accorder le son sans rien faire ;
+//   — sinon, le demarrer au TOUT PREMIER geste, ou qu'il tombe sur la page,
+//     au lieu d'attendre un appui sur l'ouverture ;
+//   — rejouer le carillon s'il est passe muet pendant que l'ouverture est
+//     encore la, pour ne pas le perdre.
+//
+// Une fois ouvert, il reste ouvert : plus rien a faire ensuite.
+const GESTES = ['pointerdown', 'pointerup', 'keydown', 'touchstart']
+let sonOuvert = false
+let enCours = null
+
+function sonner() {
+  if (sonOuvert) return Promise.resolve(true)
+  // Un clic envoie `pointerdown` PUIS `pointerup` : sans ce partage, deux
+  // ouvertures partaient de front et le carillon se jouait en double.
+  if (enCours) return enCours
+
+  enCours = (async () => {
+    app.ldAudio()
+    const ac = app.ac
+    if (!ac) return false
+    // `resume()` ne rend pas la main tout de suite : sans l'attendre, on lit
+    // encore « suspended » juste apres l'avoir debloque.
+    if (ac.state !== 'running') { try { await ac.resume() } catch { /* refuse */ } }
+    if (ac.state !== 'running') return false
+
+    sonOuvert = true
+    for (const evt of GESTES) window.removeEventListener(evt, surGeste, true)
+    // L'ouverture a sonne dans le vide : on redonne le carillon.
+    if (app.ld && !app.ld.gone && app.ld.chimed) app.ldChime()
+    return true
+  })().finally(() => { enCours = null })
+
+  return enCours
+}
+
+function surGeste() { void sonner() }
+
+for (const evt of GESTES) {
+  window.addEventListener(evt, surGeste, { capture: true, passive: true })
+}
+void sonner()
+
 // --------------------------------------------------- l'image de secours
 // Elle ne porte pas de `src` : sans cela le navigateur la telechargerait a
 // chaque visite alors qu'elle ne sert qu'en cas d'echec de WebGL. Le script
